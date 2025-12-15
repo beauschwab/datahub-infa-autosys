@@ -1,0 +1,33 @@
+source:
+  type: infa_pmrep
+  config:
+    pmrep:
+      bin_path: /opt/informatica/server/bin/pmrep
+      domain: YOUR_DOMAIN
+      repo: YOUR_REPO
+      user: YOUR_USER
+      password_env: INFA_PASSWORD
+    export:
+      folder: FINANCE_2052A
+      out_dir: /tmp/infa_export
+      include_workflows: true
+      include_mappings: true
+      overwrite: true
+    lineage:
+      lineage:
+        platform: oracle
+        platform_instance: PROD
+        env: PROD
+        default_db: DW
+        default_schema: REPORTING
+        ignore_table_patterns:
+          - DUMMY_%
+          - TEMP_%
+      infer_from_sql: true
+      infer_from_mapping_ports: true
+      attach_transformation_text: true
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

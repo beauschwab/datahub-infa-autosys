@@ -1,0 +1,18 @@
+# Stub: operational lineage is better emitted continuously via dhia + oracle_runner.
+source:
+  type: oracle_operational
+  config:
+    dsn: YOUR_HOST/YOUR_SERVICE
+    user: YOUR_USER
+    password_env: ORACLE_PASSWORD
+    lineage:
+      platform: oracle
+      platform_instance: PROD
+      env: PROD
+      default_db: DW
+      default_schema: REPORTING
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

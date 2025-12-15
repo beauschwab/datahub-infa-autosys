@@ -1,0 +1,16 @@
+source:
+  type: autosys_jil
+  config:
+    platform: autosys
+    env: PROD
+    jil_paths:
+      - /tmp/autosys/export.jil
+    bridge_to_informatica: true
+    informatica_dataflow_platform: informatica
+    informatica_dataflow_env: PROD
+    informatica_dataflow_id: FINANCE_2052A
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"
