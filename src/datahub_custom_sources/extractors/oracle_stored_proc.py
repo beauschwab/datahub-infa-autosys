@@ -284,7 +284,9 @@ def parse_procedure_substeps(
             # Collect multi-line statement (simple heuristic)
             stmt_lines = [line]
             j = i
-            while j < len(proc.source_lines) and ";" not in proc.source_lines[j]:
+            while j < len(proc.source_lines):
+                if ";" in proc.source_lines[j]:
+                    break
                 j += 1
                 if j < len(proc.source_lines):
                     stmt_lines.append(proc.source_lines[j])
@@ -301,7 +303,9 @@ def parse_procedure_substeps(
         elif "SELECT" in line_upper and "INTO" in line_upper:
             stmt_lines = [line]
             j = i
-            while j < len(proc.source_lines) and ";" not in proc.source_lines[j]:
+            while j < len(proc.source_lines):
+                if ";" in proc.source_lines[j]:
+                    break
                 j += 1
                 if j < len(proc.source_lines):
                     stmt_lines.append(proc.source_lines[j])
@@ -318,7 +322,9 @@ def parse_procedure_substeps(
             proc.has_dynamic_sql = True
             stmt_lines = [line]
             j = i
-            while j < len(proc.source_lines) and ";" not in proc.source_lines[j]:
+            while j < len(proc.source_lines):
+                if ";" in proc.source_lines[j]:
+                    break
                 j += 1
                 if j < len(proc.source_lines):
                     stmt_lines.append(proc.source_lines[j])

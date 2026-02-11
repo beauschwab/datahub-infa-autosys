@@ -308,8 +308,15 @@ def emit_stored_procedures(
             # Handle job->job edges for nested procedure calls
             input_job_edges = []
             for nested_proc in proc.nested_calls:
-                # Try to find the nested procedure URN
-                nested_job_id = f"{proc.owner}.{nested_proc}".lower()
+                # Extract schema from nested_proc if qualified (SCHEMA.PROC_NAME)
+                # Otherwise assume same schema as calling procedure
+                if "." in nested_proc:
+                    # Already qualified
+                    nested_job_id = nested_proc.lower()
+                else:
+                    # Use calling procedure's owner as schema
+                    nested_job_id = f"{proc.owner}.{nested_proc}".lower()
+                
                 nested_job_urn = datajob_urn(flow_urn, nested_job_id)
                 input_job_edges.append(
                     make_edge(nested_job_urn, properties={"relationship": "procedure_call"})
