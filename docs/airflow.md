@@ -145,6 +145,42 @@ with DAG("datahub_metadata_ingestion", start_date=datetime(2025, 1, 1), schedule
     infa >> auto >> orcl
 ```
 
+## Kubernetes Deployment
+
+For production deployment in Kubernetes with KubernetesExecutor, see the **k8s reference DAG** and deployment guide:
+
+- **DAG**: [`examples/airflow/k8s_metadata_ingestion_dag.py`](https://github.com/beauschwab/datahub-infa-autosys/blob/main/examples/airflow/k8s_metadata_ingestion_dag.py)
+- **K8s Manifests**: [`examples/kubernetes/`](https://github.com/beauschwab/datahub-infa-autosys/tree/main/examples/kubernetes)
+- **Deployment Guide**: [`examples/kubernetes/README.md`](https://github.com/beauschwab/datahub-infa-autosys/blob/main/examples/kubernetes/README.md)
+
+The k8s reference DAG includes:
+
+- ✅ KubernetesExecutor configuration with pod-level resources
+- ✅ ConfigMap integration for recipe files
+- ✅ Secret management for credentials
+- ✅ Resource limits (CPU, memory) per task
+- ✅ Error handling with retries and exponential backoff
+- ✅ Production-ready monitoring and observability
+
+### Quick K8s Setup
+
+```bash
+# 1. Create ConfigMap for recipes
+kubectl create configmap datahub-recipes \
+  --from-file=examples/recipes/ \
+  -n airflow
+
+# 2. Create Secret for credentials
+kubectl create secret generic datahub-credentials \
+  --from-literal=INFA_PASSWORD='your_password' \
+  --from-literal=ORACLE_PASSWORD='your_password' \
+  --from-literal=ESSBASE_PASSWORD='your_password' \
+  -n airflow
+
+# 3. Deploy the DAG (via GitSync, ConfigMap, or Docker image)
+# See examples/kubernetes/README.md for detailed instructions
+```
+
 ## Airflow 3.x Compatibility
 
 This package targets **Airflow 3.0+** and uses the modern SDK imports:
