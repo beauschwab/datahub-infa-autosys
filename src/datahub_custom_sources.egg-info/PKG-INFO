@@ -1,0 +1,261 @@
+Metadata-Version: 2.4
+Name: datahub-custom-sources
+Version: 0.1.0
+Summary: Custom DataHub ingestion source plugins for Informatica, AutoSys, Essbase, SSIS, Ab Initio, and Oracle operational lineage
+Author: Your Team
+License: Apache-2.0
+Requires-Python: >=3.10
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: acryl-datahub>=1.2.0
+Requires-Dist: pydantic>=2.0
+Requires-Dist: typer>=0.12
+Requires-Dist: rich>=13.0
+Requires-Dist: python-dateutil>=2.9
+Requires-Dist: oracledb>=2.0
+Requires-Dist: requests>=2.31
+Requires-Dist: sqlglot>=25.0
+Requires-Dist: pyyaml>=6.0
+Provides-Extra: dev
+Requires-Dist: pytest>=8.0; extra == "dev"
+Requires-Dist: ruff>=0.6; extra == "dev"
+Requires-Dist: mypy>=1.8; extra == "dev"
+Provides-Extra: airflow
+Requires-Dist: apache-airflow>=3.0; extra == "airflow"
+Provides-Extra: docs
+Requires-Dist: mkdocs-material>=9.0; extra == "docs"
+Requires-Dist: mkdocs-awesome-pages-plugin>=2.9; extra == "docs"
+Dynamic: license-file
+
+﻿# datahub-custom-sources
+
+Custom **DataHub** ingestion source plugins for enterprise metadata systems â€” **Informatica** (pmrep), **AutoSys** (JIL), **Oracle operational lineage**, **Essbase**, **SSIS**, and **Ab Initio** â€” with a **programmatic Python API** and an **Airflow operator** for scheduled ingestion.
+
+## What you get
+
+| Source plugin    | System              | Emits |
+|------------------|---------------------|-------|
+| `infa_pmrep`     | Informatica (pmrep) | DataFlow â†’ DataJob (workflow/session/mapping) â†’ datasets + SQL lineage |
+| `autosys_jil`    | AutoSys (JIL)       | DataFlow (box) â†’ DataJob (job) â†’ dependencies + Informatica bridging |
+| `oracle_operational` | Oracle DB       | `DataProcessInstance` runs with input/output datasets, run events |
+| `essbase`        | Oracle Essbase      | DataFlow (app) â†’ DataJob (cube/calc scripts/load rules) â†’ dataset schema |
+| `ssis_dtsx`      | SQL Server SSIS     | DataFlow (package) â†’ DataJob (task) â†’ SQL dataset + column lineage |
+| `abinitio`       | Ab Initio           | DataFlow (project) â†’ DataJob (graph) â†’ DML schema + XFR/IO lineage |
+
+### Source details
+
+<details>
+<summary><code>infa_pmrep</code> â€” Informatica (pmrep XML exports)</summary>
+
+- Exports/parses Informatica objects via `pmrep` CLI + XML parsing
+- `DataFlow` (folder/project) â†’ `DataJob` (workflow / session / mapping)
+- Dataset inputs/outputs per job
+- SQL snippets & stored-procedure calls captured + optional SQL-lineage inference
+</details>
+
+<details>
+<summary><code>autosys_jil</code> â€” AutoSys orchestration</summary>
+
+- Parses AutoSys JIL text (boxes + jobs)
+- `DataFlow` (box) â†’ `DataJob` (job) â†’ jobâ†’job dependencies from `condition:` strings
+- Optional bridging edges from AutoSys job â†’ Informatica workflow job
+</details>
+
+<details>
+<summary><code>oracle_operational</code> â€” Oracle runtime lineage</summary>
+
+- `DataProcessInstance` runs per AutoSys/Informatica/Oracle proc execution
+- Input/output datasets actually touched during each run
+- Run events (STARTED / COMPLETE + SUCCESS/FAILURE), partition predicates, batch IDs
+</details>
+
+<details>
+<summary><code>essbase</code> â€” Oracle Essbase</summary>
+
+- REST API client fetches cubes, calc scripts, and load rules
+- `DataFlow` (application) â†’ `DataJob` (cube + calc scripts + load rules)
+- Dataset schema per cube
+</details>
+
+<details>
+<summary><code>ssis_dtsx</code> â€” SQL Server Integration Services</summary>
+
+- Parses DTSX XML packages â†’ extract tasks + SQL statements
+- `DataFlow` (package) â†’ `DataJob` (task) â†’ dataset lineage (best-effort)
+- Folder scanning via `dtsx_dirs`, optional column lineage via `schema_paths` JSON
+</details>
+
+<details>
+<summary><code>abinitio</code> â€” Ab Initio</summary>
+
+- DML schema parsing, graph file iteration, XFR transform mapping
+- `DataFlow` (project) â†’ `DataJob` (graph) â†’ dataset schema + XFR lineage
+- Folder scanning via `graph_dirs`, `dml_dirs`, `xfr_dirs`
+- Optional graph IO via `io_mapping_paths` JSON
+</details>
+
+> Note: Field/column-level lineage is emitted primarily using Dataset-level lineage aspects (DataHub UI support is strongest there). Job-level fine-grained lineage exists in the model but is not universally displayed by the UI; this package keeps the â€œtruthâ€ in dataset lineage and uses jobs for orchestration + explainability.
+
+## Project structure
+
+```
+src/datahub_custom_sources/
+â”œâ”€â”€ __init__.py          # Re-exports: run_recipe, run_recipe_dict, load_recipe
+â”œâ”€â”€ runner.py            # Programmatic API (YAML or dict â†’ Pipeline)
+â”œâ”€â”€ cli.py               # Typer CLI: dhcs ingest -c recipe.yml + inspect commands
+â”œâ”€â”€ config.py            # Pydantic v2 config models for all six sources
+â”œâ”€â”€ airflow/
+â”‚   â”œâ”€â”€ __init__.py      # Re-exports DataHubIngestionOperator
+â”‚   â””â”€â”€ operators.py     # Airflow BaseOperator (Jinja, XCom, dry-run)
+â”œâ”€â”€ emit/
+â”‚   â””â”€â”€ builders.py      # Shared MCP builder helpers
+â”œâ”€â”€ extractors/          # Per-system parsers (pmrep, JIL, DTSX, DML/XFR, Essbase)
+â”œâ”€â”€ sources/             # DataHub Source plugins (one per system)
+â”‚   â””â”€â”€ common.py        # SimpleReport, as_workunits()
+â”œâ”€â”€ operational/
+â”‚   â””â”€â”€ oracle_runner.py # Oracle DataProcessInstance runner
+â””â”€â”€ utils/
+    â”œâ”€â”€ urns.py          # URN construction helpers
+    â”œâ”€â”€ paths.py         # expand_paths() â€” shared dedup directory scanner
+    â””â”€â”€ subprocess.py    # Shell command runner (stdlib logging)
+```
+## Install
+
+```bash
+python -m venv .venv
+source .venv/bin/activate
+pip install -U pip
+pip install .                            # core
+pip install ".[airflow]"                 # + Airflow operator support
+datahub check plugins                    # verify entry-points registered
+```
+
+## Three ways to run ingestion
+
+### 1) DataHub CLI (standard)
+
+Uses the standard `datahub ingest` command â€” recipes in [examples/recipes/](examples/recipes/):
+
+```bash
+datahub ingest -c examples/recipes/infa_pmrep.yml
+datahub ingest -c examples/recipes/autosys_jil.yml
+datahub ingest -c examples/recipes/oracle_operational.yml
+datahub ingest -c examples/recipes/essbase.yml
+datahub ingest -c examples/recipes/ssis_dtsx.yml
+datahub ingest -c examples/recipes/abinitio.yml
+```
+
+### 2) Project CLI â€” `dhcs` (debug-friendly)
+
+The `dhcs` CLI wraps the same pipeline with extra flags for local debugging:
+
+```bash
+# Run any recipe
+dhcs ingest -c examples/recipes/infa_pmrep.yml
+dhcs ingest -c examples/recipes/autosys_jil.yml --dry-run
+dhcs ingest -c examples/recipes/essbase.yml --report-to /tmp/report.json
+
+# Extract / inspect Informatica
+dhcs extract-informatica --config examples/configs/infa.json
+dhcs inspect-informatica --xml /tmp/export/FOLDER.xml --folder FOLDER
+
+# Inspect AutoSys
+dhcs inspect-autosys --config examples/configs/autosys.json
+dhcs dump-autosys-graph --config examples/configs/autosys.json --out /tmp/graph.json
+```
+
+### 3) Programmatic Python API
+
+Call the runner directly from any Python code â€” scripts, notebooks, Airflow:
+
+```python
+from datahub_custom_sources import run_recipe, run_recipe_dict
+
+# From a YAML recipe on disk
+run_recipe("examples/recipes/infa_pmrep.yml")
+
+# From a dict (built dynamically)
+run_recipe_dict({
+    "source": {"type": "autosys_jil", "config": {"jil_paths": ["/tmp/export.jil"]}},
+    "sink": {"type": "datahub-rest", "config": {"server": "http://datahub:8080"}},
+})
+```
+
+## Airflow integration
+
+Install with the Airflow extra:
+
+```bash
+pip install "/path/to/datahub-custom-sources[airflow]"
+```
+
+### Using the operator
+
+```python
+from datahub_custom_sources.airflow import DataHubIngestionOperator
+
+# Option 1: YAML recipe file (supports Jinja templates)
+DataHubIngestionOperator(
+    task_id="ingest_informatica",
+    recipe_path="/opt/recipes/infa_pmrep.yml",
+)
+
+# Option 2: inline recipe dict
+DataHubIngestionOperator(
+    task_id="ingest_autosys",
+    recipe={
+        "source": {"type": "autosys_jil", "config": {"jil_paths": ["/data/autosys.jil"]}},
+        "sink": {"type": "datahub-rest", "config": {"server": "http://datahub:8080"}},
+    },
+)
+
+# Option 3: Jinja-templated path from Airflow variables
+DataHubIngestionOperator(
+    task_id="ingest_dynamic",
+    recipe_path="{{ var.value.recipe_dir }}/infa_pmrep.yml",
+)
+```
+
+A full example DAG scheduling all six sources is at `examples/airflow/metadata_ingestion_dag.py`.
+
+## Recipe example
+
+```yaml
+# examples/recipes/infa_pmrep.yml
+source:
+  type: infa_pmrep
+  config:
+    pmrep:
+      bin_path: /opt/informatica/server/bin/pmrep
+      domain: YOUR_DOMAIN
+      repo: YOUR_REPO
+      user: YOUR_USER
+      password_env: INFA_PASSWORD
+    export:
+      folder: FINANCE_2052A
+      include_workflows: true
+      include_mappings: true
+      out_dir: /tmp/infa_export
+    lineage:
+      platform: oracle
+      platform_instance: PROD
+      default_db: DW
+      default_schema: 2052A
+      ignore_table_patterns: ["DUMMY_%", "TEMP_%"]
+      infer_from_sql: true
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"
+```
+
+See [examples/recipes/](examples/recipes/) for all six source recipes.
+
+## Development
+
+```bash
+pip install -e ".[dev]"
+pip install -e ".[dev,airflow]"   # if working on Airflow operator
+pytest -q
+```
