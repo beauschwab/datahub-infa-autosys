@@ -1,2 +1,0 @@
-datahub_custom_sources
-dh_infa_autosys
