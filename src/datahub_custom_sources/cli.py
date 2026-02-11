@@ -7,7 +7,11 @@ from typing import Optional
 
 import typer
 
-from datahub_custom_sources.config import AutoSysSourceConfig, InformaticaSourceConfig
+from datahub_custom_sources.config import (
+    AutoSysSourceConfig,
+    InformaticaSourceConfig,
+    OracleOperationalConfig,
+)
 from datahub_custom_sources.extractors.autosys_jil import parse_jil_files
 from datahub_custom_sources.extractors.informatica_xml import parse_informatica_folder_xml
 from datahub_custom_sources.extractors.pmrep import PmrepRunner
@@ -111,6 +115,22 @@ def dump_autosys_graph(
         typer.echo(f"Wrote â†’ {out}")
     else:
         typer.echo(text)
+
+
+# ---------------------------------------------------------------------------
+# Oracle helpers
+# ---------------------------------------------------------------------------
+@app.command()
+def extract_oracle_procs(
+    config: str = typer.Option(..., help="Path to OracleOperationalConfig JSON"),
+    server: str = typer.Option("http://localhost:8080", help="DataHub GMS server URL"),
+) -> None:
+    """Extract and emit Oracle stored procedures to DataHub."""
+    from datahub_custom_sources.operational import emit_stored_procedures
+
+    cfg = OracleOperationalConfig.model_validate(_load_json(config))
+    count = emit_stored_procedures(cfg, server)
+    typer.echo(f"✓ Emitted {count} stored procedures to DataHub")
 
 
 if __name__ == "__main__":

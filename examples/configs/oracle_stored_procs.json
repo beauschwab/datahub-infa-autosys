@@ -1,0 +1,18 @@
+{
+  "dsn": "YOUR_HOST/YOUR_SERVICE",
+  "user": "YOUR_USER",
+  "password_env": "ORACLE_PASSWORD",
+  "lineage": {
+    "platform": "oracle",
+    "platform_instance": "PROD",
+    "env": "PROD",
+    "default_db": "DW",
+    "default_schema": "ETL"
+  },
+  "extract_stored_procedures": true,
+  "stored_proc_schemas": ["ETL", "REPORTING"],
+  "stored_proc_patterns": ["ETL_%", "PROC_%"],
+  "parse_dynamic_sql": true,
+  "max_proc_nesting_depth": 5,
+  "stored_proc_source": "all_source"
+}

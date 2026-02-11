@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Dict, List, Optional
 
 from pydantic import Field
-from datahub.api.configuration.common import ConfigModel
+from datahub.configuration.common import ConfigModel
 
 
 class CommonLineageConfig(ConfigModel):
@@ -297,4 +297,28 @@ class OracleOperationalConfig(ConfigModel):
     query_sources: List[str] = Field(
         default_factory=lambda: ["v$sql"],
         description="Which Oracle sources to read queries from (e.g. v$sql, dba_hist_sqltext, unified_audit_trail).",
+    )
+    extract_stored_procedures: bool = Field(
+        default=False,
+        description="If true, extract stored procedure definitions and emit as DataFlow + DataJob with substep lineage.",
+    )
+    stored_proc_schemas: List[str] = Field(
+        default_factory=list,
+        description="List of Oracle schemas to extract stored procedures from (empty = all accessible schemas).",
+    )
+    stored_proc_patterns: List[str] = Field(
+        default_factory=list,
+        description="SQL LIKE patterns to filter procedure names (e.g., 'ETL_%', 'PROC_%'). Empty = all procedures.",
+    )
+    parse_dynamic_sql: bool = Field(
+        default=True,
+        description="Attempt to parse EXECUTE IMMEDIATE and dynamic SQL statements within stored procedures.",
+    )
+    max_proc_nesting_depth: int = Field(
+        default=5,
+        description="Maximum depth for resolving nested procedure calls (prevents infinite recursion).",
+    )
+    stored_proc_source: str = Field(
+        default="all_source",
+        description="Source view for stored procedure code: 'all_source', 'dba_source', or 'user_source'.",
     )
