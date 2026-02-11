@@ -1,12 +1,12 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 from typing import Dict, Iterator
 
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.source.source import Source
 
-from dh_infa_autosys.config import OracleOperationalConfig
-from dh_infa_autosys.sources.common import SimpleReport
+from datahub_custom_sources.config import OracleOperationalConfig
+from datahub_custom_sources.sources.common import SimpleReport
 
 
 class OracleOperationalSource(Source):
@@ -16,7 +16,7 @@ class OracleOperationalSource(Source):
     batch-oriented.
 
     This source is intentionally minimal and intended to be extended for your environment.
-    We ship a reference implementation under `dh_infa_autosys/operational/oracle_runner.py`
+    We ship a reference implementation under `datahub_custom_sources/operational/oracle_runner.py`
     that uses the SDK emitter to stream DataProcessInstance events.
     """
 
@@ -26,7 +26,7 @@ class OracleOperationalSource(Source):
         self.config = config
         self.report = SimpleReport()
         self.report.warn(
-            "OracleOperationalSource is a stub. Use `dhia` + dh_infa_autosys.operational.oracle_runner for streaming operational lineage."
+            "OracleOperationalSource is a stub. Use `dhcs` + datahub_custom_sources.operational.oracle_runner for streaming operational lineage."
         )
 
     @classmethod

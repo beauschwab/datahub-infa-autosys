@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import hashlib
 import re
@@ -8,8 +8,8 @@ from typing import Dict, Iterable, Iterator, List, Optional, Sequence, Set, Tupl
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.source.source import Source
 
-from dh_infa_autosys.config import InformaticaSourceConfig
-from dh_infa_autosys.emit.builders import (
+from datahub_custom_sources.config import InformaticaSourceConfig
+from datahub_custom_sources.emit.builders import (
     make_edge,
     mcp_dataflow_info,
     mcp_datajob_info,
@@ -17,15 +17,15 @@ from dh_infa_autosys.emit.builders import (
     mcp_dataset_platform_instance,
     mcp_upstream_lineage,
 )
-from dh_infa_autosys.extractors.informatica_xml import (
+from datahub_custom_sources.extractors.informatica_xml import (
     RepoExport,
     TableRef,
     parse_informatica_folder_xml,
     resolve_upstream_source_fields,
 )
-from dh_infa_autosys.extractors.pmrep import PmrepRunner
-from dh_infa_autosys.sources.common import SimpleReport, as_workunits
-from dh_infa_autosys.utils.urns import dataflow_urn, datajob_urn, dataset_urn
+from datahub_custom_sources.extractors.pmrep import PmrepRunner
+from datahub_custom_sources.sources.common import SimpleReport, as_workunits
+from datahub_custom_sources.utils.urns import dataflow_urn, datajob_urn, dataset_urn
 
 
 def _like_to_regex(pat: str) -> re.Pattern[str]:

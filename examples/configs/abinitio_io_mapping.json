@@ -1,0 +1,20 @@
+{
+  "load_customer": {
+    "inputs": [
+      "raw.customer",
+      "raw.customer_address"
+    ],
+    "outputs": [
+      "curated.customer"
+    ]
+  },
+  "load_orders": {
+    "inputs": [
+      "raw.orders",
+      "raw.order_items"
+    ],
+    "outputs": [
+      "curated.orders"
+    ]
+  }
+}

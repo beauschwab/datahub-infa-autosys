@@ -1,0 +1,86 @@
+site_name: datahub-custom-sources
+site_description: Custom DataHub ingestion source plugins for Informatica, AutoSys, Essbase, SSIS, Ab Initio, and Oracle operational lineage
+site_url: https://beauschwab.github.io/datahub-infa-autosys/
+repo_url: https://github.com/beauschwab/datahub-infa-autosys
+repo_name: beauschwab/datahub-infa-autosys
+edit_uri: edit/main/docs/
+
+theme:
+  name: material
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: teal
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  icon:
+    repo: fontawesome/brands/github
+  features:
+    - navigation.tabs
+    - navigation.sections
+    - navigation.expand
+    - navigation.top
+    - navigation.indexes
+    - search.suggest
+    - search.highlight
+    - content.tabs.link
+    - content.code.copy
+    - content.code.annotate
+    - toc.follow
+
+plugins:
+  - search
+
+markdown_extensions:
+  - admonition
+  - pymdownx.details
+  - pymdownx.superfences
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.snippets
+  - attr_list
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+  - def_list
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/beauschwab/datahub-infa-autosys
+
+nav:
+  - Home: index.md
+  - Getting Started: getting-started.md
+  - Sources:
+    - sources/index.md
+    - Informatica (pmrep): sources/informatica.md
+    - AutoSys (JIL): sources/autosys.md
+    - Oracle Operational: sources/oracle-operational.md
+    - Essbase: sources/essbase.md
+    - SSIS (DTSX): sources/ssis.md
+    - Ab Initio: sources/abinitio.md
+  - Recipes: recipes.md
+  - Airflow Integration: airflow.md
+  - Python API: api-reference.md
+  - Development: development.md

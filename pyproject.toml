@@ -1,11 +1,11 @@
-[build-system]
+﻿[build-system]
 requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "datahub-infa-autosys"
+name = "datahub-custom-sources"
 version = "0.1.0"
-description = "Custom DataHub ingestion sources for Informatica (pmrep) and AutoSys + Oracle operational lineage"
+description = "Custom DataHub ingestion source plugins for Informatica, AutoSys, Essbase, SSIS, Ab Initio, and Oracle operational lineage"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "Apache-2.0"}
@@ -17,19 +17,27 @@ dependencies = [
   "rich>=13.0",
   "python-dateutil>=2.9",
   "oracledb>=2.0",
+  "requests>=2.31",
+  "sqlglot>=25.0",
+  "pyyaml>=6.0",
 ]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "ruff>=0.6", "mypy>=1.8"]
+airflow = ["apache-airflow>=3.0"]
+docs = ["mkdocs-material>=9.0", "mkdocs-awesome-pages-plugin>=2.9"]
 
 [project.scripts]
-dhia = "dh_infa_autosys.cli:app"
+dhcs = "datahub_custom_sources.cli:app"
 
 # DataHub ingestion plugin entry-points (for `datahub ingest` / `datahub check plugins`)
 [project.entry-points."datahub.ingestion.source.plugins"]
-infa_pmrep = "dh_infa_autosys.sources.informatica:InformaticaPmrepSource"
-autosys_jil = "dh_infa_autosys.sources.autosys:AutoSysJilSource"
-oracle_operational = "dh_infa_autosys.sources.oracle_operational:OracleOperationalSource"
+infa_pmrep = "datahub_custom_sources.sources.informatica:InformaticaPmrepSource"
+autosys_jil = "datahub_custom_sources.sources.autosys:AutoSysJilSource"
+oracle_operational = "datahub_custom_sources.sources.oracle_operational:OracleOperationalSource"
+essbase = "datahub_custom_sources.sources.essbase:EssbaseSource"
+ssis_dtsx = "datahub_custom_sources.sources.ssis:SsisDtsxSource"
+abinitio = "datahub_custom_sources.sources.abinitio:AbInitioSource"
 
 [tool.setuptools]
 package-dir = {"" = "src"}

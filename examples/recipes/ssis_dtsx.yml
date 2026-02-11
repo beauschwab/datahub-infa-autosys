@@ -1,0 +1,22 @@
+source:
+  type: ssis_dtsx
+  config:
+    dtsx_paths:
+      - "C:/ssis/packages/finance_etl.dtsx"
+    dtsx_dirs:
+      - "C:/ssis/packages"
+    schema_paths:
+      - "C:/ssis/schema_mapping.json"
+    dataflow_platform: "ssis"
+    dataflow_env: "PROD"
+    parse_sql: true
+    lineage:
+      platform: "mssql"
+      env: "PROD"
+      default_db: "DW"
+      default_schema: "dbo"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

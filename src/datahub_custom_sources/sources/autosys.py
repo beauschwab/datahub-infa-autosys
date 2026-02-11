@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import re
 from typing import Dict, Iterator, List, Optional
@@ -6,11 +6,11 @@ from typing import Dict, Iterator, List, Optional
 from datahub.ingestion.api.common import PipelineContext
 from datahub.ingestion.source.source import Source
 
-from dh_infa_autosys.config import AutoSysSourceConfig
-from dh_infa_autosys.emit.builders import make_edge, mcp_dataflow_info, mcp_datajob_info, mcp_datajob_io
-from dh_infa_autosys.extractors.autosys_jil import parse_jil_files
-from dh_infa_autosys.sources.common import SimpleReport, as_workunits
-from dh_infa_autosys.utils.urns import dataflow_urn, datajob_urn
+from datahub_custom_sources.config import AutoSysSourceConfig
+from datahub_custom_sources.emit.builders import make_edge, mcp_dataflow_info, mcp_datajob_info, mcp_datajob_io
+from datahub_custom_sources.extractors.autosys_jil import parse_jil_files
+from datahub_custom_sources.sources.common import SimpleReport, as_workunits
+from datahub_custom_sources.utils.urns import dataflow_urn, datajob_urn
 
 
 class AutoSysJilSource(Source):

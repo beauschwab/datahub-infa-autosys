@@ -1,0 +1,115 @@
+# Example Essbase Metadata Extraction Output
+# This shows the OpenLineage-compatible YAML format
+
+extraction_timestamp: '2024-01-15T10:30:00Z'
+essbase_server: essbase.company.com
+essbase_version: '21.4.0.0.0'
+extractor_version: '0.1.0'
+
+datasets:
+  - namespace: essbase.company.com
+    name: Sample.Basic
+    platform: essbase
+    schema_fields:
+      - name: Measures
+        type: measure
+        description: Accounts dimension with 15 members
+        tags: [dense, accounts]
+        fields:
+          - name: Profit
+            type: member
+            tags: [calculated, formula]
+            essbase_metadata:
+              formula: '"Sales" - "COGS"'
+              storage_type: dynamic_calc
+          - name: Sales
+            type: member
+          - name: COGS
+            type: member
+      - name: Year
+        type: date
+        tags: [dense, time]
+        fields:
+          - name: Qtr1
+            fields: [{name: Jan}, {name: Feb}, {name: Mar}]
+          - name: Qtr2
+            fields: [{name: Apr}, {name: May}, {name: Jun}]
+      - name: Market
+        type: dimension
+        tags: [sparse]
+        fields:
+          - name: East
+            fields: [{name: "New York"}, {name: Massachusetts}]
+          - name: West
+    custom_properties:
+      essbase_application: Sample
+      essbase_cube: Basic
+    tags: [essbase, multidimensional, olap]
+
+jobs:
+  - namespace: essbase.company.com
+    name: Sample.Basic.CalcAll
+    platform: essbase
+    flow_urn: Sample.Basic
+    job_type: essbase_calculation
+    inputs:
+      - namespace: essbase.company.com
+        name: Sample.Basic
+    outputs:
+      - namespace: essbase.company.com
+        name: Sample.Basic
+    column_lineage:
+      - source_field: Measures.Sales
+        target_field: Measures.Profit
+        transformation_type: calc_script_formula
+        transformation_expression: '"Sales" - "COGS"'
+      - source_field: Measures.COGS
+        target_field: Measures.Profit
+        transformation_type: calc_script_formula
+      - source_field: Year.*
+        target_field: Year.*
+        transformation_type: aggregation
+        aggregation_function: CONSOLIDATE
+    source_code: |
+      FIX("Actual")
+        "Profit" = "Sales" - "COGS";
+        AGG("Year", "Market");
+      ENDFIX
+    tags: [essbase, calculation_script]
+
+lineage_edges:
+  # Member formula lineage
+  - source_dataset: Sample.Basic
+    source_field: Measures.Sales
+    target_dataset: Sample.Basic
+    target_field: Measures.Profit
+    transformation_type: member_formula
+    transformation_expression: '"Sales" - "COGS"'
+  
+  # Consolidation lineage
+  - source_dataset: Sample.Basic
+    source_field: Year.Jan
+    target_dataset: Sample.Basic
+    target_field: Year.Qtr1
+    transformation_type: consolidation
+    aggregation_function: SUM
+  - source_dataset: Sample.Basic
+    source_field: Year.Feb
+    target_dataset: Sample.Basic
+    target_field: Year.Qtr1
+    transformation_type: consolidation
+    aggregation_function: SUM
+  - source_dataset: Sample.Basic
+    source_field: Year.Mar
+    target_dataset: Sample.Basic
+    target_field: Year.Qtr1
+    transformation_type: consolidation
+    aggregation_function: SUM
+
+statistics:
+  Sample.Basic:
+    data_file_size_bytes: 1048576
+    index_file_size_bytes: 524288
+    existing_blocks: 15234
+    potential_blocks: 50000
+    block_density_percent: 30.5

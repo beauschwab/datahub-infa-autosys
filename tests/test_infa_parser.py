@@ -1,5 +1,5 @@
-from pathlib import Path
-from dh_infa_autosys.extractors.informatica_xml import parse_informatica_folder_xml, resolve_upstream_source_fields
+﻿from pathlib import Path
+from datahub_custom_sources.extractors.informatica_xml import parse_informatica_folder_xml, resolve_upstream_source_fields
 
 def test_parse_minimal_mapping(tmp_path: Path):
     xml = """<?xml version="1.0"?>

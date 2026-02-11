@@ -1,0 +1,22 @@
+source:
+  type: essbase
+  config:
+    base_url: "https://essbase.company.com"
+    user: "ESSBASE_USER"
+    password_env: "ESSBASE_PASSWORD"
+    verify_ssl: true
+    timeout_s: 30
+    applications: ["FINANCE"]
+    include_members: true
+    include_formulas: true
+    include_calc_scripts: true
+    include_load_rules: true
+    dataflow_platform: "essbase"
+    dataflow_env: "PROD"
+    dataset_platform: "essbase"
+    dataset_env: "PROD"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

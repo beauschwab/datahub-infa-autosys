@@ -1,15 +1,14 @@
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 from typing import Optional
 
-from rich.console import Console
-
 from dh_infa_autosys.config import InformaticaExportConfig, PmrepConfig
 from dh_infa_autosys.utils.subprocess import run_cmd
 
-console = Console()
+logger = logging.getLogger(__name__)
 
 
 class PmrepRunner:
@@ -96,7 +95,7 @@ class PmrepRunner:
         """
         Export a folder to a single XML. If you prefer per-object exports, implement that in your fork.
         """
-        console.log(f"Exporting Informatica folder {export.folder!r} to {export.out_dir}")
+        logger.info("Exporting Informatica folder %r to %s", export.folder, export.out_dir)
         out_dir = Path(export.out_dir)
         out_dir.mkdir(parents=True, exist_ok=True)
         out_file = out_dir / f"{export.folder}.xml"

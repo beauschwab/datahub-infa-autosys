@@ -1,4 +1,4 @@
-# Stub: operational lineage is better emitted continuously via dhia + oracle_runner.
+﻿# Stub: operational lineage is better emitted continuously via dhcs + oracle_runner.
 source:
   type: oracle_operational
   config:

@@ -1,42 +1,195 @@
-# datahub-infa-autosys
+﻿# datahub-custom-sources
 
-Custom **DataHub** ingestion sources (plugins) that model **nested AutoSys orchestration** running **Informatica workflows** (extracted via `pmrep`) and optionally emit **Oracle operational lineage** via `DataProcessInstance` runs.
+Custom **DataHub** ingestion source plugins for enterprise metadata systems â€” **Informatica** (pmrep), **AutoSys** (JIL), **Oracle operational lineage**, **Essbase**, **SSIS**, and **Ab Initio** â€” with a **programmatic Python API** and an **Airflow operator** for scheduled ingestion.
 
 ## What you get
 
-- `infa_pmrep` source: exports/parses Informatica objects using `pmrep` + XML parsing, emits:
-  - `DataFlow` (Informatica folder/project)
-  - `DataJob` (workflow / session / mapping, configurable granularity)
-  - dataset inputs/outputs for each job
-  - SQL snippets & stored-procedure calls captured as transformation text + optional SQL-lineage inference
+| Source plugin    | System              | Emits |
+|------------------|---------------------|-------|
+| `infa_pmrep`     | Informatica (pmrep) | DataFlow â†’ DataJob (workflow/session/mapping) â†’ datasets + SQL lineage |
+| `autosys_jil`    | AutoSys (JIL)       | DataFlow (box) â†’ DataJob (job) â†’ dependencies + Informatica bridging |
+| `oracle_operational` | Oracle DB       | `DataProcessInstance` runs with input/output datasets, run events |
+| `essbase`        | Oracle Essbase      | DataFlow (app) â†’ DataJob (cube/calc scripts/load rules) â†’ dataset schema |
+| `ssis_dtsx`      | SQL Server SSIS     | DataFlow (package) â†’ DataJob (task) â†’ SQL dataset + column lineage |
+| `abinitio`       | Ab Initio           | DataFlow (project) â†’ DataJob (graph) â†’ DML schema + XFR/IO lineage |
 
-- `autosys_jil` source: parses AutoSys JIL (boxes + jobs), emits:
-  - `DataFlow` (box)
-  - `DataJob` (job)
-  - job→job dependencies (sequence + condition graph)
-  - optional bridging edges from AutoSys job → Informatica workflow job (so nested orchestration is explicit)
+### Source details
 
-- `oracle_operational` source: emits runtime facts as `DataProcessInstance`:
-  - one instance per AutoSys run / Informatica run / Oracle proc run (configurable)
-  - input/output datasets actually touched during that execution
-  - run events (STARTED / COMPLETE + SUCCESS/FAILURE/etc)
-  - edge properties for partition predicates, batch ids, run ids, etc.
+<details>
+<summary><code>infa_pmrep</code> â€” Informatica (pmrep XML exports)</summary>
 
-> Note: Field/column-level lineage is emitted primarily using Dataset-level lineage aspects (DataHub UI support is strongest there). Job-level fine-grained lineage exists in the model but is not universally displayed by the UI; this package keeps the “truth” in dataset lineage and uses jobs for orchestration + explainability.
+- Exports/parses Informatica objects via `pmrep` CLI + XML parsing
+- `DataFlow` (folder/project) â†’ `DataJob` (workflow / session / mapping)
+- Dataset inputs/outputs per job
+- SQL snippets & stored-procedure calls captured + optional SQL-lineage inference
+</details>
 
+<details>
+<summary><code>autosys_jil</code> â€” AutoSys orchestration</summary>
+
+- Parses AutoSys JIL text (boxes + jobs)
+- `DataFlow` (box) â†’ `DataJob` (job) â†’ jobâ†’job dependencies from `condition:` strings
+- Optional bridging edges from AutoSys job â†’ Informatica workflow job
+</details>
+
+<details>
+<summary><code>oracle_operational</code> â€” Oracle runtime lineage</summary>
+
+- `DataProcessInstance` runs per AutoSys/Informatica/Oracle proc execution
+- Input/output datasets actually touched during each run
+- Run events (STARTED / COMPLETE + SUCCESS/FAILURE), partition predicates, batch IDs
+</details>
+
+<details>
+<summary><code>essbase</code> â€” Oracle Essbase</summary>
+
+- REST API client fetches cubes, calc scripts, and load rules
+- `DataFlow` (application) â†’ `DataJob` (cube + calc scripts + load rules)
+- Dataset schema per cube
+</details>
+
+<details>
+<summary><code>ssis_dtsx</code> â€” SQL Server Integration Services</summary>
+
+- Parses DTSX XML packages â†’ extract tasks + SQL statements
+- `DataFlow` (package) â†’ `DataJob` (task) â†’ dataset lineage (best-effort)
+- Folder scanning via `dtsx_dirs`, optional column lineage via `schema_paths` JSON
+</details>
+
+<details>
+<summary><code>abinitio</code> â€” Ab Initio</summary>
+
+- DML schema parsing, graph file iteration, XFR transform mapping
+- `DataFlow` (project) â†’ `DataJob` (graph) â†’ dataset schema + XFR lineage
+- Folder scanning via `graph_dirs`, `dml_dirs`, `xfr_dirs`
+- Optional graph IO via `io_mapping_paths` JSON
+</details>
+
+> Note: Field/column-level lineage is emitted primarily using Dataset-level lineage aspects (DataHub UI support is strongest there). Job-level fine-grained lineage exists in the model but is not universally displayed by the UI; this package keeps the â€œtruthâ€ in dataset lineage and uses jobs for orchestration + explainability.
+
+## Project structure
+
+```
+src/datahub_custom_sources/
+â”œâ”€â”€ __init__.py          # Re-exports: run_recipe, run_recipe_dict, load_recipe
+â”œâ”€â”€ runner.py            # Programmatic API (YAML or dict â†’ Pipeline)
+â”œâ”€â”€ cli.py               # Typer CLI: dhcs ingest -c recipe.yml + inspect commands
+â”œâ”€â”€ config.py            # Pydantic v2 config models for all six sources
+â”œâ”€â”€ airflow/
+â”‚   â”œâ”€â”€ __init__.py      # Re-exports DataHubIngestionOperator
+â”‚   â””â”€â”€ operators.py     # Airflow BaseOperator (Jinja, XCom, dry-run)
+â”œâ”€â”€ emit/
+â”‚   â””â”€â”€ builders.py      # Shared MCP builder helpers
+â”œâ”€â”€ extractors/          # Per-system parsers (pmrep, JIL, DTSX, DML/XFR, Essbase)
+â”œâ”€â”€ sources/             # DataHub Source plugins (one per system)
+â”‚   â””â”€â”€ common.py        # SimpleReport, as_workunits()
+â”œâ”€â”€ operational/
+â”‚   â””â”€â”€ oracle_runner.py # Oracle DataProcessInstance runner
+â””â”€â”€ utils/
+    â”œâ”€â”€ urns.py          # URN construction helpers
+    â”œâ”€â”€ paths.py         # expand_paths() â€” shared dedup directory scanner
+    â””â”€â”€ subprocess.py    # Shell command runner (stdlib logging)
+```
 ## Install
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate
 pip install -U pip
-pip install .
-datahub check plugins
+pip install .                            # core
+pip install ".[airflow]"                 # + Airflow operator support
+datahub check plugins                    # verify entry-points registered
 ```
 
-## Run via DataHub CLI
+## Three ways to run ingestion
 
-### 1) Informatica definitions
+### 1) DataHub CLI (standard)
+
+Uses the standard `datahub ingest` command â€” recipes in [examples/recipes/](examples/recipes/):
+
+```bash
+datahub ingest -c examples/recipes/infa_pmrep.yml
+datahub ingest -c examples/recipes/autosys_jil.yml
+datahub ingest -c examples/recipes/oracle_operational.yml
+datahub ingest -c examples/recipes/essbase.yml
+datahub ingest -c examples/recipes/ssis_dtsx.yml
+datahub ingest -c examples/recipes/abinitio.yml
+```
+
+### 2) Project CLI â€” `dhcs` (debug-friendly)
+
+The `dhcs` CLI wraps the same pipeline with extra flags for local debugging:
+
+```bash
+# Run any recipe
+dhcs ingest -c examples/recipes/infa_pmrep.yml
+dhcs ingest -c examples/recipes/autosys_jil.yml --dry-run
+dhcs ingest -c examples/recipes/essbase.yml --report-to /tmp/report.json
+
+# Extract / inspect Informatica
+dhcs extract-informatica --config examples/configs/infa.json
+dhcs inspect-informatica --xml /tmp/export/FOLDER.xml --folder FOLDER
+
+# Inspect AutoSys
+dhcs inspect-autosys --config examples/configs/autosys.json
+dhcs dump-autosys-graph --config examples/configs/autosys.json --out /tmp/graph.json
+```
+
+### 3) Programmatic Python API
+
+Call the runner directly from any Python code â€” scripts, notebooks, Airflow:
+
+```python
+from datahub_custom_sources import run_recipe, run_recipe_dict
+
+# From a YAML recipe on disk
+run_recipe("examples/recipes/infa_pmrep.yml")
+
+# From a dict (built dynamically)
+run_recipe_dict({
+    "source": {"type": "autosys_jil", "config": {"jil_paths": ["/tmp/export.jil"]}},
+    "sink": {"type": "datahub-rest", "config": {"server": "http://datahub:8080"}},
+})
+```
+
+## Airflow integration
+
+Install with the Airflow extra:
+
+```bash
+pip install "/path/to/datahub-custom-sources[airflow]"
+```
+
+### Using the operator
+
+```python
+from datahub_custom_sources.airflow import DataHubIngestionOperator
+
+# Option 1: YAML recipe file (supports Jinja templates)
+DataHubIngestionOperator(
+    task_id="ingest_informatica",
+    recipe_path="/opt/recipes/infa_pmrep.yml",
+)
+
+# Option 2: inline recipe dict
+DataHubIngestionOperator(
+    task_id="ingest_autosys",
+    recipe={
+        "source": {"type": "autosys_jil", "config": {"jil_paths": ["/data/autosys.jil"]}},
+        "sink": {"type": "datahub-rest", "config": {"server": "http://datahub:8080"}},
+    },
+)
+
+# Option 3: Jinja-templated path from Airflow variables
+DataHubIngestionOperator(
+    task_id="ingest_dynamic",
+    recipe_path="{{ var.value.recipe_dir }}/infa_pmrep.yml",
+)
+```
+
+A full example DAG scheduling all six sources is at `examples/airflow/metadata_ingestion_dag.py`.
+
+## Recipe example
 
 ```yaml
 # examples/recipes/infa_pmrep.yml
@@ -68,35 +221,12 @@ sink:
     server: "http://localhost:8080"
 ```
 
-```bash
-datahub ingest -c examples/recipes/infa_pmrep.yml
-```
-
-### 2) AutoSys orchestration
-
-```bash
-datahub ingest -c examples/recipes/autosys_jil.yml
-```
-
-### 3) Oracle operational lineage (runs)
-
-```bash
-datahub ingest -c examples/recipes/oracle_operational.yml
-```
-
-## Or run via the helper CLI (`dhia`)
-
-The `dhia` CLI is there for local debugging and “extract → inspect → emit”.
-
-```bash
-dhia extract informatica --config examples/configs/infa.json
-dhia extract autosys --config examples/configs/autosys.json
-dhia ingest --config examples/configs/combined.json
-```
+See [examples/recipes/](examples/recipes/) for all six source recipes.
 
 ## Development
 
 ```bash
 pip install -e ".[dev]"
+pip install -e ".[dev,airflow]"   # if working on Airflow operator
 pytest -q
 ```

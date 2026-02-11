@@ -1,4 +1,4 @@
-from __future__ import annotations
+﻿from __future__ import annotations
 
 import os
 import re
@@ -13,8 +13,8 @@ from rich.console import Console
 from datahub.api.entities.dataprocess.dataprocess_instance import DataProcessInstance
 from datahub.emitter.rest_emitter import DatahubRestEmitter
 
-from dh_infa_autosys.config import OracleOperationalConfig
-from dh_infa_autosys.utils.urns import dataset_urn
+from datahub_custom_sources.config import OracleOperationalConfig
+from datahub_custom_sources.utils.urns import dataset_urn
 
 console = Console()
 

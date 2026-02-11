@@ -1,0 +1,29 @@
+source:
+  type: abinitio
+  config:
+    graph_paths:
+      - "C:/abinitio/graphs/load_customer.mp"
+    graph_dirs:
+      - "C:/abinitio/graphs"
+    dml_paths:
+      - "C:/abinitio/dml/customer.dml"
+      - "C:/abinitio/dml/customer_stg.dml"
+    dml_dirs:
+      - "C:/abinitio/dml"
+    xfr_paths:
+      - "C:/abinitio/xfr/customer_map.xfr"
+    xfr_dirs:
+      - "C:/abinitio/xfr"
+    io_mapping_paths:
+      - "C:/abinitio/io_mapping.json"
+    project_name: "CustomerProject"
+    dataflow_platform: "abinitio"
+    dataflow_env: "PROD"
+    lineage:
+      platform: "hdfs"
+      env: "PROD"
+
+sink:
+  type: datahub-rest
+  config:
+    server: "http://localhost:8080"

@@ -1,4 +1,4 @@
-from dh_infa_autosys.extractors.autosys_jil import parse_jil_text
+﻿from datahub_custom_sources.extractors.autosys_jil import parse_jil_text
 
 def test_parse_simple_jil():
     text = """

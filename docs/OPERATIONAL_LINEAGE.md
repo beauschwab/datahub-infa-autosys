@@ -1,4 +1,4 @@
-# Oracle operational lineage: what to pull and why
+﻿# Oracle operational lineage: what to pull and why
 
 Operational lineage answers: "What actually ran, when, by whom, touching which tables/columns/partitions?"
 
@@ -10,10 +10,10 @@ Operational lineage answers: "What actually ran, when, by whom, touching which t
 - PARSING_SCHEMA_NAME: which schema submitted the statement
 - MODULE / ACTION / CLIENT_IDENTIFIER: critical for mapping activity back to your scheduler / app (set these in your app!)
 - LAST_ACTIVE_TIME, FIRST_LOAD_TIME, ELAPSED_TIME, CPU_TIME, BUFFER_GETS, DISK_READS: performance + timing context
-- EXECUTIONS, ROWS_PROCESSED: impact & “what changed” indicators
+- EXECUTIONS, ROWS_PROCESSED: impact & â€œwhat changedâ€ indicators
 
 ### Session-level (V$SESSION / unified audit)
-- USERNAME, OSUSER, MACHINE, PROGRAM: “who/what”
+- USERNAME, OSUSER, MACHINE, PROGRAM: â€œwho/whatâ€
 - LOGON_TIME, STATUS: timing / liveness
 - SID/SERIAL#: join keys to statement or audit records
 
@@ -36,5 +36,5 @@ Operational lineage answers: "What actually ran, when, by whom, touching which t
 - Put actual tables read/written in DataProcessInstance **inputs/outputs**.
 - Attach partition keys/predicates and run ids as **edge properties** or **custom properties** on the instance.
 
-This repo ships a reference runner (`dh_infa_autosys.operational.oracle_runner`) that polls V$SQL and emits short-lived instances.
+This repo ships a reference runner (`datahub_custom_sources.operational.oracle_runner`) that polls V$SQL and emits short-lived instances.
 In production, most teams graduate to Unified Audit + MODULE/ACTION tagging + join to scheduler run ids.
