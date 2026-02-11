@@ -1,0 +1,175 @@
+---
+# ConfigMap: DataHub Recipe Files
+#
+# This ConfigMap stores all six recipe YAML files for DataHub metadata ingestion.
+# Each recipe configures a source plugin (Informatica, AutoSys, Oracle, Essbase,
+# SSIS, Ab Initio) and points to a DataHub REST sink.
+#
+# Usage:
+#   kubectl apply -f configmap-recipes.yaml -n airflow
+#
+# The DAG mounts this ConfigMap at /opt/datahub/recipes via:
+#   volumes:
+#     - name: recipes
+#       configMap:
+#         name: datahub-recipes
+#   volumeMounts:
+#     - name: recipes
+#       mountPath: /opt/datahub/recipes
+#       readOnly: true
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datahub-recipes
+  namespace: airflow
+  labels:
+    app: datahub-ingestion
+    component: recipes
+data:
+  # ── Informatica Recipe ────────────────────────────────────────────────────
+  infa_pmrep.yml: |
+    source:
+      type: infa_pmrep
+      config:
+        pmrep:
+          bin_path: /opt/informatica/server/bin/pmrep
+          domain: YOUR_DOMAIN
+          repo: YOUR_REPO
+          user: YOUR_USER
+          password_env: INFA_PASSWORD
+        export:
+          folder: FINANCE_2052A
+          out_dir: /tmp/infa_export
+          include_workflows: true
+          include_mappings: true
+          overwrite: true
+        lineage:
+          platform: oracle
+          platform_instance: PROD
+          env: PROD
+          default_db: DW
+          default_schema: REPORTING
+          ignore_table_patterns:
+            - DUMMY_%
+            - TEMP_%
+          infer_from_sql: true
+          infer_from_mapping_ports: true
+          attach_transformation_text: true
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
+
+  # ── AutoSys Recipe ────────────────────────────────────────────────────────
+  autosys_jil.yml: |
+    source:
+      type: autosys_jil
+      config:
+        jil_paths:
+          - /data/autosys/export.jil
+        dataflow_platform: autosys
+        dataflow_env: PROD
+        bridge_informatica_jobs: true
+        informatica_platform: informatica
+        informatica_env: PROD
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
+
+  # ── Oracle Operational Lineage Recipe ─────────────────────────────────────
+  oracle_operational.yml: |
+    source:
+      type: oracle_operational
+      config:
+        connection:
+          host: oracle-db.company.internal
+          port: 1521
+          service_name: PROD
+          user: datahub_reader
+          password_env: ORACLE_PASSWORD
+        query:
+          audit_table: DBA_AUDIT.PROCESS_LINEAGE
+          lookback_days: 7
+          batch_size: 1000
+        mapping:
+          job_name_column: JOB_NAME
+          input_datasets_column: INPUT_TABLES
+          output_datasets_column: OUTPUT_TABLES
+          start_time_column: START_TIME
+          end_time_column: END_TIME
+          status_column: STATUS
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
+
+  # ── Essbase Recipe ────────────────────────────────────────────────────────
+  essbase.yml: |
+    source:
+      type: essbase
+      config:
+        base_url: "https://essbase.company.internal:9000"
+        username: admin
+        password_env: ESSBASE_PASSWORD
+        applications:
+          - Sample
+          - Planning
+        include_calc_scripts: true
+        include_load_rules: true
+        env: PROD
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
+
+  # ── SSIS Recipe ───────────────────────────────────────────────────────────
+  ssis_dtsx.yml: |
+    source:
+      type: ssis_dtsx
+      config:
+        dtsx_paths:
+          - /data/ssis/packages/ETL_Daily.dtsx
+          - /data/ssis/packages/ETL_Weekly.dtsx
+        dtsx_dirs:
+          - /data/ssis/production
+        platform: mssql
+        platform_instance: PROD
+        env: PROD
+        default_db: DW
+        default_schema: dbo
+        attach_sql_statements: true
+        schema_paths:
+          - /data/ssis/schemas/column_mappings.json
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
+
+  # ── Ab Initio Recipe ──────────────────────────────────────────────────────
+  abinitio.yml: |
+    source:
+      type: abinitio
+      config:
+        graph_dirs:
+          - /data/abinitio/graphs/production
+        dml_dirs:
+          - /data/abinitio/schemas
+        xfr_dirs:
+          - /data/abinitio/transforms
+        io_mapping_paths:
+          - /data/abinitio/metadata/graph_io.json
+        platform: abinitio
+        env: PROD
+        project_name: FINANCIAL_ETL
+    
+    sink:
+      type: datahub-rest
+      config:
+        server: "http://datahub-gms:8080"
